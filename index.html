@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A minimal click ripple interaction built with SVG, CSS animations, and vanilla JavaScript."
+    />
+    <title>Minimal Ripple Interaction</title>
+    <style>
+      :root {
+        color-scheme: dark light;
+        --bg-dark: #090909;
+        --bg-light: #f3f3f1;
+        --text-dark: rgba(255, 255, 255, 0.72);
+        --text-light: rgba(40, 40, 40, 0.64);
+        --ripple-dark: rgba(255, 255, 255, 0.58);
+        --ripple-light: rgba(170, 170, 170, 0.9);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        overflow: hidden;
+        font-family: "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 48%),
+          linear-gradient(180deg, #111111 0%, #060606 100%);
+        color: var(--text-dark);
+      }
+
+      @media (prefers-color-scheme: light) {
+        body {
+          background:
+            radial-gradient(circle at top, rgba(255, 255, 255, 0.85), transparent 42%),
+            linear-gradient(180deg, #fbfbf8 0%, #ecece8 100%);
+          color: var(--text-light);
+        }
+      }
+
+      .stage {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        isolation: isolate;
+        cursor: crosshair;
+      }
+
+      .hint {
+        position: absolute;
+        inset: auto 24px 24px auto;
+        z-index: 1;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        user-select: none;
+        pointer-events: none;
+      }
+
+      .ripple {
+        position: absolute;
+        inset: 0;
+        overflow: visible;
+        pointer-events: none;
+      }
+
+      .ring {
+        fill: none;
+        stroke: var(--ripple-dark);
+        stroke-width: 1;
+        opacity: 0;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: expand 1200ms cubic-bezier(0.16, 0.84, 0.32, 1) forwards;
+      }
+
+      @media (prefers-color-scheme: light) {
+        .ring {
+          stroke: var(--ripple-light);
+        }
+      }
+
+      .ring--2 {
+        animation-delay: 80ms;
+      }
+
+      .ring--3 {
+        animation-delay: 160ms;
+      }
+
+      @keyframes expand {
+        0% {
+          transform: scale(0.2);
+          opacity: 0;
+        }
+
+        20% {
+          opacity: 0.95;
+        }
+
+        100% {
+          transform: scale(1);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage" id="stage" aria-label="点击背景触发 SVG 涟漪">
+      <div class="hint">Click anywhere</div>
+    </main>
+
+    <script>
+      const stage = document.getElementById("stage");
+      const SVG_NS = "http://www.w3.org/2000/svg";
+
+      function createRing(className, radius) {
+        const circle = document.createElementNS(SVG_NS, "circle");
+        circle.setAttribute("class", `ring ${className}`.trim());
+        circle.setAttribute("cx", "0");
+        circle.setAttribute("cy", "0");
+        circle.setAttribute("r", String(radius));
+        return circle;
+      }
+
+      function createRipple(x, y) {
+        const size = 220;
+        const ripple = document.createElementNS(SVG_NS, "svg");
+
+        ripple.setAttribute("class", "ripple");
+        ripple.setAttribute("viewBox", `${-size} ${-size} ${size * 2} ${size * 2}`);
+        ripple.style.left = `${x}px`;
+        ripple.style.top = `${y}px`;
+        ripple.style.width = `${size * 2}px`;
+        ripple.style.height = `${size * 2}px`;
+        ripple.style.transform = "translate(-50%, -50%)";
+
+        ripple.append(
+          createRing("", 52),
+          createRing("ring--2", 86),
+          createRing("ring--3", 122)
+        );
+
+        ripple.addEventListener(
+          "animationend",
+          (event) => {
+            if (event.target.classList.contains("ring--3")) {
+              ripple.remove();
+            }
+          },
+          { once: false }
+        );
+
+        return ripple;
+      }
+
+      stage.addEventListener("click", (event) => {
+        const ripple = createRipple(event.clientX, event.clientY);
+        stage.appendChild(ripple);
+      });
+    </script>
+  </body>
+</html>
